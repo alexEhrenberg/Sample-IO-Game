@@ -26,9 +26,8 @@ cd ..
 yum install boost-devel -y
 
 # download website
-wget "https://github.com/alexEhrenberg/website/archive/master.zip"
-unzip master.zip
-cd website-master
+svn export https://github.com/alexEhrenberg/Simple-IO-Game/trunk/Part-1
+cd Part-1
 
 # build uWebSockets
 wget "https://github.com/uNetworking/uWebSockets/archive/v0.14.8.zip"
