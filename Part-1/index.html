@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet">
+<style>
+body {
+  margin:  0px;
+  padding: 0px;
+  overflow: hidden;
+}
+
+#canvas {
+  left: 0px;
+  top: 0px;
+  position: absolute;
+  z-index: -1;
+}
+
+.sdiv {
+  position: absolute;
+  transform: rotate(270deg);
+}
+
+.slider {
+  visibility: hidden;
+}
+.slider:focus {
+}
+
+/* moz */
+.slider::-moz-range-thumb {
+}
+.slider::-moz-range-track {
+}
+.slider::-moz-focus-outer {
+}
+
+/* webkit */
+.slider::-webkit-slider-thumb {
+}
+.slider::-webkit-slider-runnable-track {
+}
+
+/* ms */
+#slider0 {
+}
+#slider0::-ms-track {
+}
+#slider0::-ms-thumb {
+}
+#slider1::-ms-track {
+}
+#slider1 {
+}
+#slider1::-ms-thumb {
+}
+.slider::-ms-tooltip {
+}
+.slider::-ms-fill-lower {
+}
+.slider::-ms-fill-upper {
+}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=10.0, minimum-scale=0.5, user-scalable=yes"/>
+</head>
+<body>
+
+<div class="sdiv">
+  <input type="range" min="-1" max="361" value="180" class="slider" id="slider0">
+  <input type="range" min="-1" max="361" value="180" class="slider" id="slider1">
+</div>
+
+<canvas id="canvas" width="1" height="1"></canvas>
+<script>
+  "use strict";
+  var saveHistory = false;
+  var webDrawHistory = [];
+
+  function main() {
+    function getCSSRule(ruleName) {
+      ruleName = ruleName.toLowerCase();
+      var result = null;
+
+      var rules = document.styleSheets[2].cssRules;
+      for(var i = 0; i < rules.length; i++) {
+        if(ruleName == rules[i].selectorText) {
+          return rules[i];
+        }
+      }
+      return null;
+    }
+
+    function initSliders() {
+      browserType = (getCSSRule('.slider::-moz-range-thumb') != null)? 'moz' : (getCSSRule('.slider::-webkit-slider-thumb') != null)? 'webkit' : 'ms';
+      
+      if(browserType == 'webkit' || browserType == 'moz') {
+        console.log('delete unneeded slider');
+        var slider0 = document.getElementById('slider0');
+        slider0.remove();
+      }
+
+      if(browserType == 'moz') {
+        console.log('hmm');
+        var rules = getCSSRule('.slider');
+        rules.style.width = "400px";
+        rules.style.height = "24px";
+        rules.style.left = "0px";
+        rules.style.top = "0px";
+        rules.style.position = "absolute";
+        rules.style.background = "transparent";
+        rules.style.visibility = "visible";
+
+        rules = getCSSRule('.slider:focus');
+        rules.style.outline = "none";
+      
+        rules = getCSSRule('.slider::-moz-range-thumb');
+        rules.style.border = "none";
+        rules.style.width = "24px";
+        rules.style.height = "24px";
+        rules.style["border-radius"] = "50%";
+        rules.style.background = "hsl(180, 100%, 50%)";
+
+        rules = getCSSRule('.slider::-moz-range-track');
+        rules.style.height = "4px";
+        rules.style.background = "linear-gradient(to right, hsl(0, 100%, 100%), hsl(0, 100%, 50%), hsl(15, 100%, 50%), hsl(30, 100%, 50%), hsl(45, 100%, 50%), hsl(60, 100%, 50%), hsl(75, 100%, 50%), hsl(90, 100%, 50%), hsl(105, 100%, 50%), hsl(120, 100%, 50%), hsl(135, 100%, 50%), hsl(150, 100%, 50%), hsl(165, 100%, 50%), hsl(180, 100%, 50%), hsl(195, 100%, 50%), hsl(210, 100%, 50%), hsl(225, 100%, 50%), hsl(240, 100%, 50%), hsl(255, 100%, 50%), hsl(270, 100%, 50%), hsl(285, 100%, 50%), hsl(300, 100%, 50%), hsl(315, 100%, 50%), hsl(330, 100%, 50%), hsl(345, 100%, 50%), hsl(360, 100%, 50%), hsl(360, 100%, 0%))";
+        rules.style["border-radius"] = "10px";
+        rules.style.outline = "none";
+        rules.style.opacity = "1.0";
+
+        rules = getCSSRule('.slider::-moz-focus-outer');
+        rules.style.border = "0";
+      }
+      
+      if(browserType == 'webkit') {
+        var rules = getCSSRule('.slider');
+        rules.style.width = "400px";
+        rules.style.height = "24px";
+        rules.style.left = "0px";
+        rules.style.top = "0px";
+        rules.style.position = "absolute";
+        rules.style['-webkit-appearance'] = "none";
+        rules.style.background = "transparent";
+        rules.style.visibility = "visible";
+
+        rules = getCSSRule('.slider:focus');
+        rules.style.outline = "none";
+
+        rules = getCSSRule('.slider::-webkit-slider-thumb');
+        rules.style['margin-top'] = "-10px"; // (thumb width - track height) / 2
+        rules.style['-webkit-appearance'] = "none";
+        rules.style.border = "none";
+        rules.style.width = "24px";
+        rules.style.height = "24px";
+        rules.style['border-radius'] = "50%";
+        rules.style.background = "hsl(180, 100%, 50%)";
+
+        rules = getCSSRule('.slider::-webkit-slider-runnable-track');
+        rules.style.height = "4px";
+        rules.style.background = "linear-gradient(to right, hsl(0, 100%, 100%), hsl(0, 100%, 50%), hsl(15, 100%, 50%), hsl(30, 100%, 50%), hsl(45, 100%, 50%), hsl(60, 100%, 50%), hsl(75, 100%, 50%), hsl(90, 100%, 50%), hsl(105, 100%, 50%), hsl(120, 100%, 50%), hsl(135, 100%, 50%), hsl(150, 100%, 50%), hsl(165, 100%, 50%), hsl(180, 100%, 50%), hsl(195, 100%, 50%), hsl(210, 100%, 50%), hsl(225, 100%, 50%), hsl(240, 100%, 50%), hsl(255, 100%, 50%), hsl(270, 100%, 50%), hsl(285, 100%, 50%), hsl(300, 100%, 50%), hsl(315, 100%, 50%), hsl(330, 100%, 50%), hsl(345, 100%, 50%), hsl(360, 100%, 50%), hsl(360, 100%, 0%))";
+        rules.style["border-radius"] = "10px";
+        rules.style.outline = "none";
+        rules.style.opacity = "1.0";
+      }
+      
+      if(browserType == 'ms') {
+        var rules = getCSSRule('.slider');
+        rules.style.width = "400px";
+        rules.style.left = "0px";
+        rules.style.top = "0px";
+        rules.style.position = "absolute";
+        rules.style['z-index'] = "0";
+        rules.style.visibility = "visible";
+
+        rules = getCSSRule('.slider:focus');
+        rules.style.outline = "none";
+
+        rules = getCSSRule('.slider::-ms-tooltip');
+        rules.style.display = "none";
+
+        rules = getCSSRule('.slider::-ms-fill-lower');
+        rules.style.background = "transparent";
+
+        rules = getCSSRule('.slider::-ms-fill-upper');
+        rules.style.background = "transparent";
+
+        /* background slider */
+        rules = getCSSRule('#slider0');
+        rules.style.height = "4px";
+
+        rules = getCSSRule('#slider0::-ms-thumb');
+        rules.style.border = "none";
+        rules.style.background = "transparent";
+
+        rules = getCSSRule('#slider0::-ms-track');
+        rules.style['border-width'] = "0px 0";
+        rules.style["border-radius"] = "10px";
+        rules.style['border-color'] = "transparent";
+        rules.style.color = 'transparent';
+        rules.style.background = "linear-gradient(to right, hsl(0, 100%, 100%), hsl(0, 100%, 50%), hsl(15, 100%, 50%), hsl(30, 100%, 50%), hsl(45, 100%, 50%), hsl(60, 100%, 50%), hsl(75, 100%, 50%), hsl(90, 100%, 50%), hsl(105, 100%, 50%), hsl(120, 100%, 50%), hsl(135, 100%, 50%), hsl(150, 100%, 50%), hsl(165, 100%, 50%), hsl(180, 100%, 50%), hsl(195, 100%, 50%), hsl(210, 100%, 50%), hsl(225, 100%, 50%), hsl(240, 100%, 50%), hsl(255, 100%, 50%), hsl(270, 100%, 50%), hsl(285, 100%, 50%), hsl(300, 100%, 50%), hsl(315, 100%, 50%), hsl(330, 100%, 50%), hsl(345, 100%, 50%), hsl(360, 100%, 50%), hsl(360, 100%, 0%))";
+
+        /* foreground slider */
+        rules = getCSSRule('#slider1');
+        rules.style.top = "-15px"; // (thumb width)/2 + slider0 height - 1
+        rules.style['z-index'] = "1";
+
+        rules = getCSSRule('#slider1::-ms-thumb');
+        rules.style.height = "24px";
+        rules.style.width = "24px";
+        rules.style['border-radius'] = "50%";
+        rules.style.border = "none";
+        rules.style.background = "hsl(180, 100%, 50%)";
+
+        rules = getCSSRule('#slider1::-ms-track');
+        rules.style.background = "transparent";
+        rules.style['border-color'] = 'transparent';
+        rules.style['border-width'] = "12px 0"; // (thumb width)/2
+        rules.style.color = "transparent";
+      }
+    }
+
+    function resizeSlider() {
+      var sliderWidth = Math.max(400, Math.floor(window.innerHeight / 3));
+      var sliderThickness = Math.max(4, Math.floor(Math.max(window.innerWidth, window.innerHeight) / 300) );
+      var thumbDiameter = sliderThickness * 6;
+
+      if(mobileTablet) {
+        sliderThickness = Math.floor(1.5 * sliderThickness);
+        thumbDiameter = Math.floor(1.5 * thumbDiameter);
+      }
+
+      var rules = getCSSRule('.sdiv');
+      rules.style.top = "" + (thumbDiameter + sliderWidth) + "px";
+      var offset = (browserType != 'ms')? thumbDiameter/2 : 0;
+      rules.style.left = "" + (window.innerWidth - (2 * thumbDiameter - offset)) + "px";
+
+      if(browserType == 'moz') {
+        var rules = getCSSRule('.slider');
+        rules.style.width = "" + sliderWidth + "px";
+        rules.style.height = "" + thumbDiameter + "px";
+
+        rules = getCSSRule('.slider::-moz-range-thumb');
+        rules.style.width = "" + thumbDiameter + "px";
+        rules.style.height = "" + thumbDiameter + "px";
+        
+        rules = getCSSRule('.slider::-moz-range-track');
+        rules.style.height = "" + sliderThickness + "px";
+      }
+      if(browserType == 'webkit') {
+        var rules = getCSSRule('.slider');
+        rules.style.width = "" + sliderWidth + "px";
+        rules.style.height = "" + thumbDiameter + "px";
+
+        rules = getCSSRule('.slider::-webkit-slider-thumb');
+        rules.style['margin-top'] = "" + (-1 * Math.floor((thumbDiameter - sliderThickness)/2)) + "px"; // (thumb width - track height) / 2
+        rules.style.width = "" + thumbDiameter + "px";
+        rules.style.height = "" + thumbDiameter + "px";
+
+        rules = getCSSRule('.slider::-webkit-slider-runnable-track');
+        rules.style.height = "" + sliderThickness + "px";
+      }
+      if(browserType == 'ms') {
+        var rules = getCSSRule('.slider');
+        rules.style.width = "" + sliderWidth + "px";
+
+        rules = getCSSRule('#slider0');
+        rules.style.height = "" + sliderThickness + "px";
+
+        rules = getCSSRule('#slider1');
+        rules.style.top = "" + (-1 * (Math.floor(thumbDiameter + sliderThickness)/2 )) + "px"; // (thumb width)/2 + slider0 height - 1 (this is fucky)
+
+        rules = getCSSRule('#slider1::-ms-thumb');
+        rules.style.height = "" + thumbDiameter + "px";
+        rules.style.width = "" + thumbDiameter + "px";
+
+        rules = getCSSRule('#slider1::-ms-track');
+        rules.style['border-width'] = "" + Math.floor(thumbDiameter/2) + "px 0"; // (thumb width)/2
+      }
+    }
+
+    function hslToRgb(h, s, l){
+      var r, g, b;
+      if(s == 0){
+          r = g = b = l;
+      }else{
+        var hue2rgb = function hue2rgb(p, q, t){
+          if(t < 0) t += 1;
+          if(t > 1) t -= 1;
+          if(t < 1/6) return p + (q - p) * 6 * t;
+          if(t < 1/2) return q;
+          if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        }
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      return {r: r, g: g, b: b};
+    }
+
+    function updateColor(value) {
+      var rule = (browserType == 'moz')? getCSSRule('.slider::-moz-range-thumb') : (browserType == 'webkit')? getCSSRule('.slider::-webkit-slider-thumb') : getCSSRule('#slider1::-ms-thumb');
+      if(rule != null) {
+        if(value == 361) {
+          rule.style.background = 'hsl(360, 100%, 0%)';
+          localColor = hslToRgb(1.0, 1.0, 0.0);
+        } else if( value == -1) {
+          rule.style.background = 'hsl(0, 100%, 1000%)';
+          localColor = hslToRgb(0.0, 1.0, 1.0);
+        } else {
+          rule.style.background = 'hsl(' +value+ ', 100%, 50%)';
+          localColor = hslToRgb(value / 360, 1.0, 0.5);
+        }
+      }
+    }
+
+    function updateOpacity(opacity, offset) {
+      var elements = document.getElementsByClassName('slider');
+      opacity = opacity + offset;
+      if((offset < 0 && sliderFadeIn) || offset > 0 && !sliderFadeIn) {
+        return;
+      }
+      if(opacity >= 1) {
+        opacity = 1;
+      } else if(opacity < 0) {
+        opacity = 0;
+      } else {
+        elements[0].style.opacity = opacity; // this updates the opacity
+        if(browserType == 'ms') {
+          elements[1].style.opacity = opacity; // this updates the opacity
+        }
+        setTimeout(function(){updateOpacity(opacity, offset);}, 16);
+      }
+    }
+
+    function sliderFade() {
+      var opacity = (sliderFadeIn)? 0.1 : 1.0;
+      var offset = (sliderFadeIn)? 0.05 : -0.05;
+      var elements = document.getElementsByClassName('slider');
+
+      if(sliderFadeIn) {
+        elements[0].style.visibility = 'visible';
+        if(browserType == 'ms') {
+          elements[1].style.visibility = 'visible';
+        }
+        sliderHidden = false;
+      }
+
+      updateOpacity(opacity, offset);
+
+      if(!sliderFadeIn) {
+        elements[0].style.visibility = 'hidden';
+        if(browserType == 'ms') {
+          elements[1].style.visibility = 'hidden';
+        }
+        sliderHidden = true;
+      }
+    }
+
+    function makeProgram(gl, vert, frag) {
+      // Create a vertex shader object
+      var vertShader = gl.createShader(gl.VERTEX_SHADER);
+
+      // Attach vertex shader source code
+      gl.shaderSource(vertShader, vert);
+
+      // Compile the vertex shader
+      gl.compileShader(vertShader);
+
+      // Create fragment shader object
+      var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+      // Attach fragment shader source code
+      gl.shaderSource(fragShader, frag); 
+     
+      // Compile the fragmentt shader
+      gl.compileShader(fragShader);
+
+      // Create a shader program object to store the combined shader program
+      var program = gl.createProgram();
+
+      // Attach a vertex shader
+      gl.attachShader(program, vertShader);
+
+      // Attach a fragment shader
+      gl.attachShader(program, fragShader);
+
+      // Link both the programs
+      gl.linkProgram(program);
+
+      return program;
+    }
+
+    function textureFrameBuffer() {
+      var texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      // Set up texture so we can render any size image and so we are working with pixels.
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+      // make the texture the same size as the image
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+      // Create a framebuffer
+      var fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+      // Attach a texture to it.
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+      return {tex: texture, fbo: fbo};
+    }
+
+    function userDraw() {
+      
+      if(mousedown) {
+        var last = userDrawData.length;
+
+        if(userDrawData.length == 0) {
+          userDrawData.push( Math.round(canvas.width * mouseXOld), Math.round(canvas.height * mouseYOld));
+        }
+
+        if(last == 0 || userDrawData[last-2] != Math.round(canvas.width * mouseXNew) || userDrawData[last-1] != Math.round(canvas.height * mouseYNew)) {
+          userDrawData.push(Math.round(canvas.width * mouseXNew), Math.round(canvas.height * mouseYNew));
+        }
+        
+        var xdelta = mouseXOld - mouseXNew;
+        var ydelta = mouseYOld - mouseYNew;
+        var stepsize = circleRadius / (2 * canvas.width);
+        var steps = Math.max( Math.abs(xdelta), Math.abs(ydelta) ) / stepsize;
+        
+        drawToTexture([mouseXOld, mouseYOld, localColor]);
+        for(var i = 0; i < steps; i++) {
+          var x = mouseXOld - i * xdelta / steps;
+          var y = mouseYOld - i * ydelta / steps;
+          drawToTexture([x, y, localColor]);
+        }
+        drawToTexture([mouseXNew, mouseYNew, localColor]);
+        
+        drawToCanvas();
+      }
+      mouseXOld = mouseXNew;
+      mouseYOld = mouseYNew;
+    }
+
+    function webDraw() {
+
+      var data = [];
+      for(var k = 0; k < webDrawData.length; k++) {
+
+        var coords = webDrawData[k];
+        var color = webDrawColor[k];
+
+        for(var j = 0; j < coords.length; j+=2) {
+          var xo = j == 0 ? coords[j] : coords[j-2];
+          var yo = j == 0 ? coords[j+1] : coords[j-1];
+          var xn = coords[j];
+          var yn = coords[j+1];
+
+          xo = xo / canvas.width;
+          yo = yo / canvas.height;
+          xn = xn / canvas.width;
+          yn = yn / canvas.height;
+
+          var xdelta = xo - xn;
+          var ydelta = yo - yn;
+          var stepsize = circleRadius / (2 * canvas.width);
+          var steps = Math.max( Math.abs(xdelta), Math.abs(ydelta) ) / stepsize;
+          
+          data.push(xo, yo, color);
+          for(var i = 0; i < steps; i++) {
+            var x = xo - i * xdelta / steps;
+            var y = yo - i * ydelta / steps;
+            data.push(x, y, color)
+          }
+          data.push(xn, yn, color);
+        }
+      }
+
+      if(data.length > 0) {
+       drawToTexture(data);
+       drawToCanvas();
+      }
+      
+      webDrawData = [];
+      webDrawColor = [];
+    }
+
+    function drawToTexture(data) {
+      
+      // Turn on the position attribute
+      gl.enableVertexAttribArray(positionLocation);
+      // Bind the position buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+     
+      // Turn on the translation attribute
+      gl.enableVertexAttribArray(translationLocation);
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      // Tell the translation attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(translationLocation, 2, gl.FLOAT, false, 0, 0);
+
+      // Turn on the color attribute
+      gl.enableVertexAttribArray(colorLocation);
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      // Tell the translation attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+
+      // start with the original image
+      gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+      // don't y flip images while drawing to the textures
+      gl.uniform1f(flipYLocation, 1);
+      // use circle vertices
+      gl.uniform1f(circleLocation, 1);
+      // Setup to draw into one of the framebuffers.
+      setFramebuffer(framebuffers[0], gl.canvas.width, gl.canvas.height);
+      
+      var p = [];
+      var t = [];
+      var c = [];
+      for(var i = 0; i < data.length; i+=3) {
+        p.push(0, 0);
+        t.push(data[i], data[i+1]);
+        c.push(data[i+2].r, data[i+2].g, data[i+2].b);  
+      }
+
+      // Bind the position buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p), gl.STATIC_DRAW);
+
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(t), gl.STATIC_DRAW);
+
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(c), gl.STATIC_DRAW);
+
+      gl.drawArrays(gl.GL_POINTS, 0, p.length / 2);
+    }
+
+    function drawToCanvas() {
+      gl.clearColor(1.0, 1.0, 1.0, 1.0);
+
+      gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+
+      // use textures here not circle
+      gl.uniform1f(circleLocation, 0);
+      
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, gl.canvas.width, 0, 0, gl.canvas.height, 0, gl.canvas.height, gl.canvas.width, 0, gl.canvas.width, gl.canvas.height,]), gl.STATIC_DRAW);
+      
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+      
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+
+      // finally draw the result to the canvas.
+      gl.uniform1f(flipYLocation, -1);  // need to y flip for canvas
+      setFramebuffer(null, gl.canvas.width, gl.canvas.height);
+      // Draw the rectangle.
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    function drawFade() {
+
+      // update fade on texture 1 stuff
+      gl.uniform1f(fadeLocation, drawFadeRate);
+
+      gl.bindTexture(gl.TEXTURE_2D, textures[0])
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, gl.canvas.width, 0, 0, gl.canvas.height, 0, gl.canvas.height, gl.canvas.width, 0, gl.canvas.width, gl.canvas.height,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+      setFramebuffer(framebuffers[1], canvas.width, canvas.height);
+      // Draw the rectangle.
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      // copy fade data onto texture 0
+      gl.uniform1f(fadeLocation, 0.0);
+
+      gl.bindTexture(gl.TEXTURE_2D, textures[1])
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, gl.canvas.width, 0, 0, gl.canvas.height, 0, gl.canvas.height, gl.canvas.width, 0, gl.canvas.width, gl.canvas.height,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+      setFramebuffer(framebuffers[0], canvas.width, canvas.height);
+      // Draw the rectangle.
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      
+      // draw on canvas
+      drawToCanvas();
+    }
+
+    function setFramebuffer(fbo, width, height) {
+      // make this the framebuffer we are rendering to.
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+      // Tell the shader the resolution of the framebuffer.
+      gl.uniform2f(resolutionLocation, width, height);
+
+      // Tell webgl the viewport setting needed for framebuffer.
+      gl.viewport(0, 0, width, height);
+    }
+
+    function resize() {
+
+      resizeSlider();
+
+      var oldWidth = canvas.width
+      var oldHeight = canvas.height;
+      if(window.innerWidth > canvas.width || window.innerHeight > canvas.height) {
+        canvas.width  = Math.max(canvas.width, window.innerWidth); 
+        canvas.height = Math.max(canvas.height, window.innerHeight);
+        // finally draw the result to the canvas.
+        gl.uniform1f(flipYLocation, 1);  // don't y flip for texture
+
+        // use textures here not circle
+        gl.uniform1f(circleLocation, 0);
+
+        // don't fade on resize
+        gl.uniform1f(fadeLocation, 0.0);
+
+        for(var i = 0; i < framebuffers.length; i++) {
+          var o = textureFrameBuffer();
+
+          // for the next draw, use the texture we just rendered to.
+          gl.bindTexture(gl.TEXTURE_2D, textures[i]);
+
+          // Setup to draw into one of the framebuffers.
+          setFramebuffer(o.fbo, oldWidth, oldHeight);
+
+          // Draw the rectangle.
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          
+          textures[i] = o.tex;
+          framebuffers[i] = o.fbo;
+        }
+      }
+    }
+      
+    function mousemove(event) {
+
+      var rect = canvas.getBoundingClientRect();
+      mouseXNew = 2 * (event.clientX - rect.left) / canvas.width;
+      mouseYNew = 2 * (event.clientY - rect.top) / canvas.height;
+
+      event.preventDefault();
+
+      userDraw();
+
+      if(!clickedSlider && mousedown && !sliderHidden) {
+        sliderFadeIn = false;
+        sliderFade();
+      }
+    }
+
+    function mouseup(event) {
+      if(sliderHidden) {
+        sliderFadeIn = true;
+        sliderFade();
+      }
+      if(userDrawData.length > 0) {
+        var s = userDrawData.toString() + " " + JSON.stringify(localColor);
+        ws.send(s);
+        userDrawData = [];
+      }
+    }
+
+    function touchend(event) {
+      if(touchStart) {
+        touchStart = false;
+        
+        if(sliderHidden) {
+          sliderFadeIn = true;
+          sliderFade();
+        }
+        if(userDrawData.length > 0) {
+          var s = userDrawData.toString() + " " + JSON.stringify(localColor);
+          ws.send(s);
+          userDrawData = [];
+        }
+      }
+    }
+
+    function touchmove(event) {
+      if(event.touches.length == 1) {
+        var rect = canvas.getBoundingClientRect();
+        mouseXNew = 2 * (event.changedTouches[0].clientX - rect.left) / canvas.width;
+        mouseYNew = 2 * (event.changedTouches[0].clientY - rect.top) / canvas.height;
+
+        if(!touchStart) {
+          mouseXOld = mouseXNew;
+          mouseYOld = mouseYNew;
+          touchStart = true;
+        } else {
+          event.preventDefault();
+        
+          userDraw();
+
+          if(!clickedSlider && mousedown && !sliderHidden) {
+            sliderFadeIn = false;
+            sliderFade();
+          }
+        }
+      }
+    }
+
+    function loop() {
+      fadeRateMod += 1;
+      drawFadeRate = (fadeRateMod % 10 == 0)? Math.sqrt(numUsers) / 1000 + 0.002 : 0; // some relationship to numUsers
+      // try to draw webdata
+      webDraw();
+      
+      // draw fade
+      drawFade(drawFadeRate);
+      
+      window.requestAnimationFrame(loop);
+    }
+
+    function run() {
+
+      // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, gl.canvas.width, 0, 0, gl.canvas.height, 0, gl.canvas.height, gl.canvas.width, 0, gl.canvas.width, gl.canvas.height,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]), gl.STATIC_DRAW);
+
+
+      // Tell it to use our program (pair of shaders)
+      gl.useProgram(program);
+      gl.clearColor(1.0, 1.0, 1.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+      // Turn on the position attribute
+      gl.enableVertexAttribArray(positionLocation);
+
+      // Bind the position buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+      // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+
+      // Turn on the translation attribute
+      gl.enableVertexAttribArray(translationLocation);
+
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, translationBuffer);
+
+      // Tell the translation attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(translationLocation, 2, gl.FLOAT, false, 0, 0);
+
+
+      // Turn on the color attribute
+      gl.enableVertexAttribArray(colorLocation);
+
+      // Bind the translation buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+      // Tell the translation attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+
+      // start with the original image
+      gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+      
+      // don't y flip images while drawing to the textures
+      gl.uniform1f(flipYLocation, 1);
+
+      // use circle vertices
+      gl.uniform1f(circleLocation, 0);
+      
+      // Setup to draw into one of the framebuffers.
+      setFramebuffer(framebuffers[0], canvas.width, canvas.height);
+      
+      // Draw the rectangle.
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      
+      drawToCanvas();
+      
+      resize();
+
+      loop();
+    }
+
+
+    /* globals */
+    var clickedSlider = false;
+
+    var touchStart = false;
+    var numUsers = 10;
+    var fadeRateMod = 0;
+    var drawFadeRate = 0.001;
+    
+    var localColor = {r:0, g: 1, b: 1};
+
+    var sliderFadeIn = false;
+    var sliderHidden = false;
+
+    var mousedown = false;
+    var mouseXOld = 0;
+    var mouseYOld = 0;
+    var mouseXNew = 0;
+    var mouseYNew = 0;
+    
+    var browserType = '';
+
+    var canvas = document.getElementById("canvas");
+    var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if(!gl) {
+      alert("oh no.\nThis webpage needs webgl.\nSearch 'enable webgl' for your specific browser and hardware to fix the issue.\nSorry :(");
+      //throw "can't run webgl"
+      return 0;
+    }
+
+    var vert = 
+      'attribute vec2 a_position;'+
+      'attribute vec2 a_translation;'+
+      'attribute vec3 a_color;'+
+      'uniform vec2 u_resolution;'+
+      'uniform float u_flipY;'+
+      'varying vec2 v_texCoord;'+
+      'varying vec3 v_color;'+
+      'void main() {'+
+         'vec2 zeroToOne = a_position / u_resolution;'+
+         'vec2 zeroToTwo = zeroToOne * 2.0;'+
+         'vec2 clipSpace = zeroToTwo - 1.0;'+
+         'gl_Position = vec4(clipSpace * vec2(1, u_flipY), 0, 1) + vec4(a_translation, 0.0, 0.0);'+
+         'gl_PointSize = 10.0;'+
+         'v_texCoord = a_position / u_resolution;'+
+         'v_color = a_color;'+
+      '}';
+    var frag =
+      'precision mediump float;'+
+      'uniform sampler2D u_image;'+
+      'uniform float u_circle;'+
+      'uniform float u_fade;'+
+      'varying vec3 v_color;'+
+      'varying vec2 v_texCoord;'+
+      'void main() {'+
+        'vec4 color = texture2D(u_image, v_texCoord);'+
+        'if(u_circle == 0.0) {'+
+          'if(color.a > 0.0) {'+
+            'float a = color.a;'+
+            'if(u_fade != 0.0) {'+
+              'a = color.a - u_fade;'+
+            '}'+
+            'gl_FragColor = vec4(color.r, color.g, color.b, a);'+
+          '} else {'+
+            'gl_FragColor = vec4(1.0,1.0,1.0,1.0);'+
+          '}'+
+        '} else {'+
+          'float r = 0.0, alpha = 1.0;'+
+          'vec2 cxy = 2.0 * gl_PointCoord - 1.0;'+
+          'r = dot(cxy, cxy);'+
+          'if(r > 1.0) {'+
+            'discard;'+
+          '}'+
+          'gl_FragColor = vec4(v_color, 1.0) * (alpha);'+
+        '}'+
+      '}';
+
+    var program = (gl)? makeProgram(gl, vert, frag) : null;
+
+    window.mobileAndTabletcheck = function() { var c = false; (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) c = true;})(navigator.userAgent||navigator.vendor||window.opera); return c; };
+    var mobileTablet = window.mobileAndTabletcheck();
+
+    window.addEventListener('resize', resize, false);
+
+    
+    var loaded = false;
+    window.onload = function() {
+      loaded = true;
+    }
+
+    var circleRadius = 3;
+
+    // look up where the vertex data needs to go.
+    var translationLocation = (gl)? gl.getAttribLocation(program, "a_translation") : null;
+    var positionLocation = (gl)? gl.getAttribLocation(program, "a_position") : null;
+    var colorLocation = (gl)? gl.getAttribLocation(program, 'a_color') : null;
+
+    var resolutionLocation = (gl)? gl.getUniformLocation(program, "u_resolution") : null;
+    var flipYLocation = (gl)? gl.getUniformLocation(program, "u_flipY") : null;
+    var circleLocation = (gl)? gl.getUniformLocation(program, "u_circle") : null;
+    var fadeLocation = (gl)? gl.getUniformLocation(program, "u_fade") : null;
+    
+    var positionBuffer = (gl)? gl.createBuffer() : null;
+    var translationBuffer = (gl)? gl.createBuffer() : null;
+    var colorBuffer = (gl)? gl.createBuffer() : null;
+
+    // create 2 textures and attach them to framebuffers.
+    var textures = [];
+    var framebuffers = [];
+    if(gl) {
+      for (var i = 0; i < 2; i++) {
+        var o = textureFrameBuffer();
+        textures.push(o.tex);
+        framebuffers.push(o.fbo);
+      }
+    }
+
+    var elements = document.getElementsByClassName('slider');
+    elements[0].addEventListener('mousedown', function(event) { clickedSlider = true;});
+    elements[0].addEventListener('mouseup', function(event) { clickedSlider = false;});
+    
+    if(browserType == 'ms') {
+      elements[1].addEventListener('mousedown', function(event) { clickedSlider = true;});
+      elements[1].addEventListener('mouseup', function(event) { clickedSlider = false;});
+    }
+
+    canvas.addEventListener('mousemove', function(event) { mousemove(event); }, false);
+    canvas.addEventListener('mousedown', function(event) {mousedown = true; mousemove(event); }, false);
+    canvas.addEventListener('mouseup', function(event) {mousedown = false; mouseup(event); }, false);
+    
+    canvas.addEventListener('touchstart', function(event) {mousedown = true; touchmove(event); }, false);
+    canvas.addEventListener('touchend', function(event) {mousedown = false; touchend(event); }, false);
+    canvas.addEventListener('touchmove', function(event) { touchmove(event); }, false);
+    
+    document.getElementById('slider1').oninput = function() {updateColor(this.value)};
+    document.getElementById('slider1').onchange = function() {updateColor(this.value)};
+
+    var userDrawData = [];
+    var webDrawData = [];
+    var webDrawColor = [];
+
+    // use wss and 443 OR ws and 80
+    var ws = new WebSocket("ws://" + window.location.hostname + ":" + (window.location.port || "80"));
+
+    ws.onclose = function() {
+      // do something?
+    };
+
+    ws.onmessage = function(e) {
+
+      var colorPos = e.data.lastIndexOf(" ");
+      var str_coords = e.data.substr(0, colorPos);
+      var str_color = e.data.substr(colorPos+1);
+
+      var color = JSON.parse(str_color);
+      var coords = JSON.parse("[" + str_coords + "]");
+      if(gl) {
+        webDrawData.push(coords);
+        webDrawColor.push(color);
+
+        if(saveHistory) {
+          webDrawHistory.push(coords);
+        }
+      }
+    };
+
+    if(gl) {
+      initSliders();
+      run();
+    }
+  }
+  main();
+</script>
+</body>
+</html>
