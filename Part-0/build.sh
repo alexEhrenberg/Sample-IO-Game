@@ -26,7 +26,7 @@ cd ..
 yum install boost-devel -y
 
 # download website
-svn export https://github.com/alexEhrenberg/Simple-IO-Game/trunk/Part-1
+svn export https://github.com/alexEhrenberg/Sample-IO-Game/trunk/Part-1
 cd Part-1
 
 # build uWebSockets
