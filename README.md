@@ -1,1 +1,1 @@
-# Simple-IO-Game
+# Sample-IO-Game
